@@ -22,6 +22,9 @@
 {{-- Filled by JavaScript after a task is added without a page reload --}}
 <div class="alert alert-success d-none" id="ajaxAlert" role="status"></div>
 
+{{-- Shows errors from the Complete/Mark Pending and Delete buttons --}}
+<div class="alert alert-danger d-none" id="ajaxErrorAlert" role="alert"></div>
+
 <div class="card shadow-sm">
     <div class="card-body">
 
@@ -47,8 +50,8 @@
                     <tbody id="tasksTableBody">
                         @foreach($tasks as $task)
 
-                            <tr>
-                                <td>
+                            <tr data-task-id="{{ $task->id }}">
+                                <td data-field="title">
                                     @if($task->status === 'Completed')
                                         <del>{{ $task->title }}</del>
                                     @else
@@ -56,11 +59,11 @@
                                     @endif
                                 </td>
 
-                                <td>
+                                <td data-field="description">
                                     {{ $task->description ?? '—' }}
                                 </td>
 
-                                <td>
+                                <td data-field="status">
                                     @if($task->status === 'Completed')
                                         <span class="badge bg-success">
                                             Completed
@@ -72,11 +75,11 @@
                                     @endif
                                 </td>
 
-                                <td>
+                                <td data-field="due_date">
                                     {{ $task->due_date ?? '—' }}
                                 </td>
 
-                                <td>
+                                <td data-field="created">
                                     {{ $task->created_at->format('Y-m-d') }}
                                 </td>
 
@@ -86,12 +89,14 @@
                                         <button type="button"
                                                 class="btn btn-sm btn-primary"
                                                 data-bs-toggle="modal"
+                                                data-role="edit-button"
                                                 data-bs-target="#editTaskModal-{{ $task->id }}">
                                             Edit
                                         </button>
 
                                         <form action="{{ route('tasks.update', $task) }}"
-                                              method="POST">
+                                              method="POST"
+                                              data-role="toggle-form">
                                             @csrf
                                             @method('PUT')
 
@@ -119,6 +124,7 @@
 
                                         <form action="{{ route('tasks.destroy', $task) }}"
                                               method="POST"
+                                              data-role="delete-form"
                                               onsubmit="return confirm('Are you sure you want to delete this task?')">
                                             @csrf
                                             @method('DELETE')
@@ -163,7 +169,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
 
-                <form action="{{ route('tasks.update', $task) }}" method="POST">
+                <form action="{{ route('tasks.update', $task) }}" method="POST" data-role="edit-form">
                     @csrf
                     @method('PUT')
 
@@ -180,6 +186,9 @@
                     </div>
 
                     <div class="modal-body">
+
+                        {{-- Shows session, permission, server and network errors from JavaScript --}}
+                        <div class="alert alert-danger d-none" data-role="form-message" role="alert"></div>
 
                         <div class="mb-3">
                             <label class="form-label">Title</label>
@@ -366,7 +375,7 @@
 
         <td data-field="description"></td>
 
-        <td>
+        <td data-field="status">
             <span class="badge bg-warning text-dark">
                 Pending
             </span>
@@ -425,7 +434,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
 
-                <form method="POST">
+                <form method="POST" data-role="edit-form">
                     @csrf
                     @method('PUT')
 
@@ -442,6 +451,9 @@
                     </div>
 
                     <div class="modal-body">
+
+                        {{-- Shows session, permission, server and network errors from JavaScript --}}
+                        <div class="alert alert-danger d-none" data-role="form-message" role="alert"></div>
 
                         <div class="mb-3">
                             <label class="form-label">Title</label>
@@ -503,31 +515,47 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('js/ajax.js') }}"></script>
+
     <script>
-        // Add a task without reloading the page, using the Fetch API.
-        // If JavaScript is off, the form still submits normally and the page reloads as before.
+        // Create, edit, complete/mark pending and delete tasks without reloading the page.
+        // Requests go through ajaxRequest() in public/js/ajax.js.
+        // If JavaScript is off, every form still submits normally and the page reloads as before.
         document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('addTaskForm');
-            const submitButton = form.querySelector('button[type="submit"]');
-            const formMessage = document.getElementById('addTaskFormMessage');
+            const addTaskForm = document.getElementById('addTaskForm');
+            const addTaskFormMessage = document.getElementById('addTaskFormMessage');
             const addTaskModal = document.getElementById('addTaskModal');
+            const tasksTableBody = document.getElementById('tasksTableBody');
 
-            let isSubmitting = false; // stops double submissions while a request is in flight
+            // ---------- Shared helpers ----------
 
-            // Remove old error messages (both Blade-rendered and ones added by this script)
-            function clearFormErrors() {
-                form.querySelectorAll('.text-danger').forEach(function (element) {
-                    element.remove();
+            // Run `work` unless the same element already has a request in flight (stops double submissions)
+            async function submitOnce(lockElement, work) {
+                if (lockElement.dataset.submitting === 'true') {
+                    return;
+                }
+
+                const submitButtons = lockElement.querySelectorAll('button[type="submit"]');
+
+                lockElement.dataset.submitting = 'true';
+                submitButtons.forEach(function (button) {
+                    button.disabled = true;
                 });
 
-                formMessage.classList.add('d-none');
-                formMessage.replaceChildren();
+                try {
+                    await work();
+                } finally {
+                    delete lockElement.dataset.submitting;
+                    submitButtons.forEach(function (button) {
+                        button.disabled = false;
+                    });
+                }
             }
 
-            // Show a general message at the top of the form (optionally with a Refresh button)
-            function showFormMessage(text, withRefreshButton) {
-                formMessage.replaceChildren();
-                formMessage.appendChild(document.createTextNode(text));
+            // Put a message in an alert box (optionally with a Refresh button) and show it
+            function showMessage(element, text, withRefreshButton) {
+                element.replaceChildren();
+                element.appendChild(document.createTextNode(text));
 
                 if (withRefreshButton) {
                     const refreshButton = document.createElement('button');
@@ -537,20 +565,30 @@
                     refreshButton.addEventListener('click', function () {
                         window.location.reload();
                     });
-                    formMessage.appendChild(refreshButton);
+                    element.appendChild(refreshButton);
                 }
 
-                formMessage.classList.remove('d-none');
+                element.classList.remove('d-none');
+            }
+
+            // Remove old error messages in a form (both Blade-rendered and ones added by this script)
+            function clearFormErrors(form, messageElement) {
+                form.querySelectorAll('.text-danger').forEach(function (element) {
+                    element.remove();
+                });
+
+                messageElement.classList.add('d-none');
+                messageElement.replaceChildren();
             }
 
             // Show each validation error under its field (same style as the server-rendered errors)
-            function showFieldErrors(errors) {
+            function showFieldErrors(form, messageElement, errors) {
                 Object.keys(errors).forEach(function (fieldName) {
                     const field = form.elements[fieldName];
                     const message = errors[fieldName][0];
 
                     if (!field) {
-                        showFormMessage(message);
+                        showMessage(messageElement, message);
                         return;
                     }
 
@@ -561,9 +599,87 @@
                 });
             }
 
-            // Build the Edit modal for the new task from its <template>
+            // Page-level success message (replaces any old flash message)
+            function showSuccessMessage(text) {
+                const flashAlert = document.getElementById('flashAlert');
+                if (flashAlert) {
+                    flashAlert.remove();
+                }
+
+                document.getElementById('ajaxErrorAlert').classList.add('d-none');
+
+                const ajaxAlert = document.getElementById('ajaxAlert');
+                ajaxAlert.textContent = text;
+                ajaxAlert.classList.remove('d-none');
+            }
+
+            // Page-level error message, used by the row buttons (Complete/Mark Pending, Delete)
+            function showPageError(text, withRefreshButton) {
+                const flashAlert = document.getElementById('flashAlert');
+                if (flashAlert) {
+                    flashAlert.remove();
+                }
+
+                document.getElementById('ajaxAlert').classList.add('d-none');
+                showMessage(document.getElementById('ajaxErrorAlert'), text, withRefreshButton);
+            }
+
+            // ---------- Rendering ----------
+
+            // Fill a table row with a task's current values (works for Pending and Completed)
+            function fillTaskRow(row, task) {
+                const isCompleted = task.status === 'Completed';
+
+                const titleCell = row.querySelector('[data-field="title"]');
+                if (isCompleted) {
+                    const del = document.createElement('del');
+                    del.textContent = task.title;
+                    titleCell.replaceChildren(del);
+                } else {
+                    titleCell.textContent = task.title;
+                }
+
+                row.querySelector('[data-field="description"]').textContent = task.description ?? '—';
+                row.querySelector('[data-field="due_date"]').textContent = task.due_date ?? '—';
+
+                const badge = row.querySelector('[data-field="status"] .badge');
+                badge.className = isCompleted ? 'badge bg-success' : 'badge bg-warning text-dark';
+                badge.textContent = isCompleted ? 'Completed' : 'Pending';
+
+                // The Complete/Mark Pending button resends the current values with the opposite status,
+                // so its hidden inputs must always match the latest saved values
+                const toggleForm = row.querySelector('[data-role="toggle-form"]');
+                toggleForm.elements.title.value = task.title;
+                toggleForm.elements.description.value = task.description ?? '';
+                toggleForm.elements.due_date.value = task.due_date ?? '';
+                toggleForm.elements.status.value = isCompleted ? 'Pending' : 'Completed';
+                toggleForm.querySelector('button[type="submit"]').textContent = isCompleted ? 'Mark Pending' : 'Complete';
+            }
+
+            // Fill a task's Edit modal form with its current values
+            function fillEditForm(editForm, task) {
+                editForm.elements.title.value = task.title;
+                editForm.elements.description.value = task.description ?? '';
+                editForm.elements.due_date.value = task.due_date ?? '';
+                editForm.elements.status.value = task.status;
+            }
+
+            // After an update, refresh both the row and the Edit modal so neither holds stale values
+            function applyUpdatedTask(task) {
+                const row = tasksTableBody.querySelector('tr[data-task-id="' + task.id + '"]');
+                if (row) {
+                    fillTaskRow(row, task);
+                }
+
+                const editModal = document.getElementById('editTaskModal-' + task.id);
+                if (editModal) {
+                    fillEditForm(editModal.querySelector('form'), task);
+                }
+            }
+
+            // Build the Edit modal for a new task from its <template>
             function buildEditModal(task, updateUrl) {
-                const modal = document.getElementById('editTaskModalTemplate').content.firstElementChild.cloneNode(true);
+                const modal = document.importNode(document.getElementById('editTaskModalTemplate').content.firstElementChild, true);
                 const modalId = 'editTaskModal-' + task.id;
                 const labelId = 'editTaskModalLabel-' + task.id;
 
@@ -574,111 +690,179 @@
                 const editForm = modal.querySelector('form');
                 editForm.action = updateUrl;
                 editForm.elements.task_id.value = task.id;
-                editForm.elements.title.value = task.title;
-                editForm.elements.description.value = task.description ?? '';
-                editForm.elements.due_date.value = task.due_date ?? '';
+                fillEditForm(editForm, task);
 
                 return modal;
             }
 
-            // Build the table row for the new task from its <template>
+            // Build the table row for a new task from its <template>
             function buildTaskRow(task, createdDate, urls) {
-                const row = document.getElementById('taskRowTemplate').content.firstElementChild.cloneNode(true);
+                // importNode (not cloneNode) creates the copy in this page, so the Delete form's
+                // inline onsubmit="return confirm(...)" is active on the new row
+                const row = document.importNode(document.getElementById('taskRowTemplate').content.firstElementChild, true);
 
-                row.querySelector('[data-field="title"]').textContent = task.title;
-                row.querySelector('[data-field="description"]').textContent = task.description ?? '—';
-                row.querySelector('[data-field="due_date"]').textContent = task.due_date ?? '—';
+                row.dataset.taskId = task.id;
                 row.querySelector('[data-field="created"]').textContent = createdDate;
-
                 row.querySelector('[data-role="edit-button"]')
                     .setAttribute('data-bs-target', '#editTaskModal-' + task.id);
-
-                // "Complete" button resends the current values with status = Completed
-                const toggleForm = row.querySelector('[data-role="toggle-form"]');
-                toggleForm.action = urls.update;
-                toggleForm.elements.title.value = task.title;
-                toggleForm.elements.description.value = task.description ?? '';
-                toggleForm.elements.due_date.value = task.due_date ?? '';
-
+                row.querySelector('[data-role="toggle-form"]').action = urls.update;
                 row.querySelector('[data-role="delete-form"]').action = urls.destroy;
+
+                fillTaskRow(row, task);
 
                 return row;
             }
 
-            function handleSuccess(data) {
-                // Newest tasks are shown first, so the new row goes at the top
-                document.getElementById('tasksTableBody').prepend(buildTaskRow(data.task, data.created_date, data.urls));
-                addTaskModal.before(buildEditModal(data.task, data.urls.update));
+            // Show the "No tasks yet" message when the table becomes empty
+            function updateEmptyState() {
+                const isEmpty = tasksTableBody.children.length === 0;
 
-                document.getElementById('emptyTasksMessage').classList.add('d-none');
-                document.getElementById('tasksTableWrapper').classList.remove('d-none');
+                document.getElementById('emptyTasksMessage').classList.toggle('d-none', !isEmpty);
+                document.getElementById('tasksTableWrapper').classList.toggle('d-none', isEmpty);
+            }
+
+            // ---------- Create ----------
+
+            function handleCreateSuccess(data) {
+                // Newest tasks are shown first, so the new row goes at the top
+                tasksTableBody.prepend(buildTaskRow(data.task, data.created_date, data.urls));
+                addTaskModal.before(buildEditModal(data.task, data.urls.update));
+                updateEmptyState();
 
                 // Clear the form (set values directly: form.reset() would restore old() values from a failed submit)
-                form.elements.title.value = '';
-                form.elements.description.value = '';
-                form.elements.due_date.value = '';
+                addTaskForm.elements.title.value = '';
+                addTaskForm.elements.description.value = '';
+                addTaskForm.elements.due_date.value = '';
 
                 bootstrap.Modal.getOrCreateInstance(addTaskModal).hide();
 
-                // Replace any old flash message with the new success message
-                const flashAlert = document.getElementById('flashAlert');
-                if (flashAlert) {
-                    flashAlert.remove();
-                }
-
-                const ajaxAlert = document.getElementById('ajaxAlert');
-                ajaxAlert.textContent = data.message;
-                ajaxAlert.classList.remove('d-none');
+                showSuccessMessage(data.message);
             }
 
-            form.addEventListener('submit', async function (event) {
+            addTaskForm.addEventListener('submit', function (event) {
                 event.preventDefault();
 
-                if (isSubmitting) {
+                submitOnce(addTaskForm, async function () {
+                    clearFormErrors(addTaskForm, addTaskFormMessage);
+
+                    const result = await ajaxRequest(addTaskForm.action, {
+                        method: 'POST',
+                        body: new FormData(addTaskForm),
+                    });
+                    const data = result.data;
+
+                    if (result.status === 201 && data && data.task) {
+                        handleCreateSuccess(data);
+                    } else if (result.status === 422 && data && data.errors) {
+                        showFieldErrors(addTaskForm, addTaskFormMessage, data.errors);
+                    } else {
+                        const error = ajaxErrorMessage(result, { forbidden: 'You are not allowed to create tasks.' });
+                        showMessage(addTaskFormMessage, error.text, error.withRefreshButton);
+                    }
+                });
+            });
+
+            // ---------- Edit (modal form) ----------
+
+            function submitEditForm(editForm) {
+                const messageElement = editForm.querySelector('[data-role="form-message"]');
+
+                submitOnce(editForm, async function () {
+                    clearFormErrors(editForm, messageElement);
+
+                    // POST with the form's hidden _method=PUT, exactly like the normal form submission
+                    const result = await ajaxRequest(editForm.action, {
+                        method: 'POST',
+                        body: new FormData(editForm),
+                    });
+                    const data = result.data;
+
+                    if (result.ok && data && data.task) {
+                        applyUpdatedTask(data.task);
+                        bootstrap.Modal.getOrCreateInstance(editForm.closest('.modal')).hide();
+                        showSuccessMessage(data.message);
+                    } else if (result.status === 422 && data && data.errors) {
+                        showFieldErrors(editForm, messageElement, data.errors);
+                    } else {
+                        const error = ajaxErrorMessage(result, { forbidden: 'You are not allowed to edit this task.' });
+                        showMessage(messageElement, error.text, error.withRefreshButton);
+                    }
+                });
+            }
+
+            // ---------- Status (Complete / Mark Pending button) ----------
+
+            function submitToggleForm(toggleForm) {
+                // Lock the whole row so Complete and Delete can't run at the same time
+                submitOnce(toggleForm.closest('tr'), async function () {
+                    // POST with the form's hidden _method=PUT, exactly like the normal form submission
+                    const result = await ajaxRequest(toggleForm.action, {
+                        method: 'POST',
+                        body: new FormData(toggleForm),
+                    });
+                    const data = result.data;
+
+                    if (result.ok && data && data.task) {
+                        applyUpdatedTask(data.task);
+                        showSuccessMessage(data.message);
+                    } else if (result.status === 422 && data && data.errors) {
+                        // There are no visible fields for this form, so show the first error at the top
+                        const firstField = Object.keys(data.errors)[0];
+                        showPageError(data.errors[firstField][0]);
+                    } else {
+                        const error = ajaxErrorMessage(result, { forbidden: 'You are not allowed to update this task.' });
+                        showPageError(error.text, error.withRefreshButton);
+                    }
+                });
+            }
+
+            // ---------- Delete ----------
+
+            function submitDeleteForm(deleteForm) {
+                const row = deleteForm.closest('tr');
+
+                submitOnce(row, async function () {
+                    // POST with the form's hidden _method=DELETE, exactly like the normal form submission
+                    const result = await ajaxRequest(deleteForm.action, {
+                        method: 'POST',
+                        body: new FormData(deleteForm),
+                    });
+
+                    if (result.ok) {
+                        // Remove the row (and its Edit modal) only after the server confirmed the delete
+                        const editModal = document.getElementById('editTaskModal-' + row.dataset.taskId);
+                        if (editModal) {
+                            editModal.remove();
+                        }
+
+                        row.remove();
+                        updateEmptyState();
+                        showSuccessMessage(result.data && result.data.message ? result.data.message : 'Task deleted successfully!');
+                    } else {
+                        const error = ajaxErrorMessage(result, { forbidden: 'You are not allowed to delete this task.' });
+                        showPageError(error.text, error.withRefreshButton);
+                    }
+                });
+            }
+
+            // One listener for all edit, toggle and delete forms, including ones added after page load
+            document.addEventListener('submit', function (event) {
+                const form = event.target;
+
+                // The Delete form's confirm() already cancelled the submission if the user clicked "Cancel"
+                if (event.defaultPrevented) {
                     return;
                 }
 
-                isSubmitting = true;
-                submitButton.disabled = true;
-                clearFormErrors();
-
-                try {
-                    let response;
-
-                    try {
-                        response = await fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': form.elements._token.value,
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest',
-                            },
-                            body: new FormData(form),
-                        });
-                    } catch (networkError) {
-                        showFormMessage('Could not reach the server. Check your internet connection and try again.');
-                        return;
-                    }
-
-                    // The body may not be JSON (e.g. an HTML error page), so don't let parsing crash
-                    const data = await response.json().catch(function () {
-                        return null;
-                    });
-
-                    if (response.status === 201 && data && data.task) {
-                        handleSuccess(data);
-                    } else if (response.status === 422 && data && data.errors) {
-                        showFieldErrors(data.errors);
-                    } else if (response.status === 401 || response.status === 419) {
-                        showFormMessage('Your session has expired. Please refresh the page (and log in again if asked), then try again.', true);
-                    } else if (response.status === 403) {
-                        showFormMessage('You are not allowed to create tasks.');
-                    } else {
-                        showFormMessage('Something went wrong on the server. Please try again later.');
-                    }
-                } finally {
-                    isSubmitting = false;
-                    submitButton.disabled = false;
+                if (form.matches('[data-role="edit-form"]')) {
+                    event.preventDefault();
+                    submitEditForm(form);
+                } else if (form.matches('[data-role="toggle-form"]')) {
+                    event.preventDefault();
+                    submitToggleForm(form);
+                } else if (form.matches('[data-role="delete-form"]')) {
+                    event.preventDefault();
+                    submitDeleteForm(form);
                 }
             });
         });

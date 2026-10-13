@@ -84,6 +84,14 @@ without a full-page reload. */
 
     $task->update($validated);
 
+    // AJAX requests (edit modal and Complete/Mark Pending button) get the updated task as JSON
+    if ($request->expectsJson()) {
+        return response()->json([
+            'message' => 'Task updated successfully!',
+            'task' => $task,
+        ]);
+    }
+
     return redirect()
         ->route('tasks.index')
         ->with('success', 'Task updated successfully!');
@@ -92,9 +100,16 @@ without a full-page reload. */
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Task $task)
+    public function destroy(Request $request, Task $task)
 {
     $task->delete();
+
+    // AJAX requests only need the message; JavaScript removes the row itself
+    if ($request->expectsJson()) {
+        return response()->json([
+            'message' => 'Task deleted successfully!',
+        ]);
+    }
 
     return redirect()
         ->route('tasks.index')
