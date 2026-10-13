@@ -107,6 +107,30 @@ class TaskUpdateDestroyTest extends TestCase
             ->assertSessionHasErrors('title');
     }
 
+    public function test_regular_status_toggle_submission_redirects_with_flash_message(): void
+    {
+        // Same fields the Complete button's form posts when JavaScript is off
+        $task = $this->makeTask();
+
+        $this->put(route('tasks.update', $task), [
+            'title' => $task->title,
+            'description' => $task->description,
+            'due_date' => $task->due_date,
+            'status' => 'Completed',
+        ])->assertRedirect(route('tasks.index'))
+            ->assertSessionHas('success', 'Task updated successfully!');
+
+        $this->assertDatabaseHas('tasks', ['id' => $task->id, 'status' => 'Completed']);
+    }
+
+    public function test_ajax_update_of_missing_task_returns_404(): void
+    {
+        $this->putJson(route('tasks.update', 999), [
+            'title' => 'Ghost',
+            'status' => 'Pending',
+        ])->assertNotFound();
+    }
+
     public function test_ajax_delete_removes_task_and_returns_json(): void
     {
         $task = $this->makeTask();
@@ -144,6 +168,7 @@ class TaskUpdateDestroyTest extends TestCase
             ->assertSee('data-role="edit-form"', false)
             ->assertSee('data-role="toggle-form"', false)
             ->assertSee('data-role="delete-form"', false)
-            ->assertSee('js/ajax.js', false);
+            ->assertSee('js/ajax.js', false)
+            ->assertSee('<meta name="csrf-token"', false);
     }
 }

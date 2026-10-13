@@ -519,7 +519,7 @@
 
     <script>
         // Create, edit, complete/mark pending and delete tasks without reloading the page.
-        // Requests go through ajaxRequest() in public/js/ajax.js.
+        // Requests go through sendAjax() in public/js/ajax.js.
         // If JavaScript is off, every form still submits normally and the page reloads as before.
         document.addEventListener('DOMContentLoaded', function () {
             const addTaskForm = document.getElementById('addTaskForm');
@@ -739,26 +739,40 @@
                 showSuccessMessage(data.message);
             }
 
+            // Collect a form's fields as a plain object for sendAjax().
+            // _token and _method are left out: the CSRF token goes in a header and
+            // sendAjax() sends the real HTTP method (PUT/DELETE) instead.
+            function formToObject(form) {
+                const data = Object.fromEntries(new FormData(form));
+                delete data._token;
+                delete data._method;
+                return data;
+            }
+
             addTaskForm.addEventListener('submit', function (event) {
                 event.preventDefault();
 
-                submitOnce(addTaskForm, async function () {
+                submitOnce(addTaskForm, function () {
                     clearFormErrors(addTaskForm, addTaskFormMessage);
 
-                    const result = await ajaxRequest(addTaskForm.action, {
-                        method: 'POST',
-                        body: new FormData(addTaskForm),
-                    });
-                    const data = result.data;
+                    return sendAjax(addTaskForm.action, 'POST', formToObject(addTaskForm),
+                        function (response) {
+                            if (response && response.task) {
+                                handleCreateSuccess(response);
+                            } else {
+                                showMessage(addTaskFormMessage, 'Something went wrong on the server. Please try again later.');
+                            }
+                        },
+                        function (xhr) {
+                            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                                showFieldErrors(addTaskForm, addTaskFormMessage, xhr.responseJSON.errors);
+                                return;
+                            }
 
-                    if (result.status === 201 && data && data.task) {
-                        handleCreateSuccess(data);
-                    } else if (result.status === 422 && data && data.errors) {
-                        showFieldErrors(addTaskForm, addTaskFormMessage, data.errors);
-                    } else {
-                        const error = ajaxErrorMessage(result, { forbidden: 'You are not allowed to create tasks.' });
-                        showMessage(addTaskFormMessage, error.text, error.withRefreshButton);
-                    }
+                            const error = ajaxErrorMessage(xhr, { forbidden: 'You are not allowed to create tasks.' });
+                            showMessage(addTaskFormMessage, error.text, error.withRefreshButton);
+                        }
+                    );
                 });
             });
 
@@ -767,26 +781,29 @@
             function submitEditForm(editForm) {
                 const messageElement = editForm.querySelector('[data-role="form-message"]');
 
-                submitOnce(editForm, async function () {
+                submitOnce(editForm, function () {
                     clearFormErrors(editForm, messageElement);
 
-                    // POST with the form's hidden _method=PUT, exactly like the normal form submission
-                    const result = await ajaxRequest(editForm.action, {
-                        method: 'POST',
-                        body: new FormData(editForm),
-                    });
-                    const data = result.data;
+                    return sendAjax(editForm.action, 'PUT', formToObject(editForm),
+                        function (response) {
+                            if (response && response.task) {
+                                applyUpdatedTask(response.task);
+                                bootstrap.Modal.getOrCreateInstance(editForm.closest('.modal')).hide();
+                                showSuccessMessage(response.message);
+                            } else {
+                                showMessage(messageElement, 'Something went wrong on the server. Please try again later.');
+                            }
+                        },
+                        function (xhr) {
+                            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                                showFieldErrors(editForm, messageElement, xhr.responseJSON.errors);
+                                return;
+                            }
 
-                    if (result.ok && data && data.task) {
-                        applyUpdatedTask(data.task);
-                        bootstrap.Modal.getOrCreateInstance(editForm.closest('.modal')).hide();
-                        showSuccessMessage(data.message);
-                    } else if (result.status === 422 && data && data.errors) {
-                        showFieldErrors(editForm, messageElement, data.errors);
-                    } else {
-                        const error = ajaxErrorMessage(result, { forbidden: 'You are not allowed to edit this task.' });
-                        showMessage(messageElement, error.text, error.withRefreshButton);
-                    }
+                            const error = ajaxErrorMessage(xhr, { forbidden: 'You are not allowed to edit this task.' });
+                            showMessage(messageElement, error.text, error.withRefreshButton);
+                        }
+                    );
                 });
             }
 
@@ -794,25 +811,29 @@
 
             function submitToggleForm(toggleForm) {
                 // Lock the whole row so Complete and Delete can't run at the same time
-                submitOnce(toggleForm.closest('tr'), async function () {
-                    // POST with the form's hidden _method=PUT, exactly like the normal form submission
-                    const result = await ajaxRequest(toggleForm.action, {
-                        method: 'POST',
-                        body: new FormData(toggleForm),
-                    });
-                    const data = result.data;
+                submitOnce(toggleForm.closest('tr'), function () {
+                    // Sends the task's current values with the opposite status (hidden inputs)
+                    return sendAjax(toggleForm.action, 'PUT', formToObject(toggleForm),
+                        function (response) {
+                            if (response && response.task) {
+                                applyUpdatedTask(response.task);
+                                showSuccessMessage(response.message);
+                            } else {
+                                showPageError('Something went wrong on the server. Please try again later.');
+                            }
+                        },
+                        function (xhr) {
+                            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                                // There are no visible fields for this form, so show the first error at the top
+                                const errors = xhr.responseJSON.errors;
+                                showPageError(errors[Object.keys(errors)[0]][0]);
+                                return;
+                            }
 
-                    if (result.ok && data && data.task) {
-                        applyUpdatedTask(data.task);
-                        showSuccessMessage(data.message);
-                    } else if (result.status === 422 && data && data.errors) {
-                        // There are no visible fields for this form, so show the first error at the top
-                        const firstField = Object.keys(data.errors)[0];
-                        showPageError(data.errors[firstField][0]);
-                    } else {
-                        const error = ajaxErrorMessage(result, { forbidden: 'You are not allowed to update this task.' });
-                        showPageError(error.text, error.withRefreshButton);
-                    }
+                            const error = ajaxErrorMessage(xhr, { forbidden: 'You are not allowed to update this task.' });
+                            showPageError(error.text, error.withRefreshButton);
+                        }
+                    );
                 });
             }
 
@@ -821,27 +842,24 @@
             function submitDeleteForm(deleteForm) {
                 const row = deleteForm.closest('tr');
 
-                submitOnce(row, async function () {
-                    // POST with the form's hidden _method=DELETE, exactly like the normal form submission
-                    const result = await ajaxRequest(deleteForm.action, {
-                        method: 'POST',
-                        body: new FormData(deleteForm),
-                    });
+                submitOnce(row, function () {
+                    return sendAjax(deleteForm.action, 'DELETE', null,
+                        function (response) {
+                            // Remove the row (and its Edit modal) only after the server confirmed the delete
+                            const editModal = document.getElementById('editTaskModal-' + row.dataset.taskId);
+                            if (editModal) {
+                                editModal.remove();
+                            }
 
-                    if (result.ok) {
-                        // Remove the row (and its Edit modal) only after the server confirmed the delete
-                        const editModal = document.getElementById('editTaskModal-' + row.dataset.taskId);
-                        if (editModal) {
-                            editModal.remove();
+                            row.remove();
+                            updateEmptyState();
+                            showSuccessMessage(response && response.message ? response.message : 'Task deleted successfully!');
+                        },
+                        function (xhr) {
+                            const error = ajaxErrorMessage(xhr, { forbidden: 'You are not allowed to delete this task.' });
+                            showPageError(error.text, error.withRefreshButton);
                         }
-
-                        row.remove();
-                        updateEmptyState();
-                        showSuccessMessage(result.data && result.data.message ? result.data.message : 'Task deleted successfully!');
-                    } else {
-                        const error = ajaxErrorMessage(result, { forbidden: 'You are not allowed to delete this task.' });
-                        showPageError(error.text, error.withRefreshButton);
-                    }
+                    );
                 });
             }
 
