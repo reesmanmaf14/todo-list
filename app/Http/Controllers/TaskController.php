@@ -32,10 +32,6 @@ class TaskController extends Controller
     $task = Task::create($validated); //insert the validated data into the table
 
   
-/*If the browser expects JSON, 
-Laravel returns the newly created task's information and action URLs 
-with HTTP status 201, allowing JavaScript to update the page 
-without a full-page reload. */
 
     if ($request->expectsJson()) {
         return response()->json([  

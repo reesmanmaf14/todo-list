@@ -168,7 +168,8 @@ class TaskUpdateDestroyTest extends TestCase
             ->assertSee('data-role="edit-form"', false)
             ->assertSee('data-role="toggle-form"', false)
             ->assertSee('data-role="delete-form"', false)
-            ->assertSee('js/ajax.js', false)
+            ->assertSee('jquery-3.7.1.min.js', false)
+            ->assertDontSee('js/ajax.js', false)
             ->assertSee('<meta name="csrf-token"', false);
     }
 }
