@@ -3,8 +3,7 @@
 @section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    {{-- The dashboards (which extend this page) replace the heading and add their counts below --}}
-    <h2>@section('heading')@can('view all tasks') All Tasks @else My Tasks @endcan @show</h2>
+    <h2>@can('view all tasks') All Tasks @else My Tasks @endcan</h2>
 
     <button type="button"
             class="btn btn-primary"
@@ -13,8 +12,6 @@
         <i class="bi bi-plus-lg" aria-hidden="true"></i> Add Task
     </button>
 </div>
-
-@yield('counts')
 
 @if(session('success'))
     <div class="alert alert-success" id="flashAlert">
@@ -384,18 +381,6 @@
 
                 // "No tasks match this filter." when there are tasks but none are visible
                 $('#noFilterMatchesMessage').toggleClass('d-none', rows.length === 0 || rows.not('.d-none').length > 0);
-
-                updateCounts();
-            }
-
-            // Dashboard count cards: recount from the rows, so they stay right after every add/complete/delete.
-            // The rows are exactly the tasks the counts cover (yours, or every task for admins); no cards on this page = no-op
-            function updateCounts() {
-                const rows = tasksTableBody.children('tr');
-
-                $('[data-count="total"]').text(rows.length);
-                $('[data-count="pending"]').text(rows.filter('[data-status="Pending"]').length);
-                $('[data-count="completed"]').text(rows.filter('[data-status="Completed"]').length);
             }
 
             $('#taskFilters').on('click', '[data-filter]', function () {

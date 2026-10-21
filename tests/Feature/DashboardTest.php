@@ -77,40 +77,39 @@ class DashboardTest extends TestCase
 
     // --- What each dashboard shows ---
 
-    public function test_user_dashboard_shows_their_own_tasks_counts_and_add_task(): void
+    public function test_user_dashboard_shows_only_their_own_counts_and_a_link_to_their_tasks(): void
     {
         Task::factory()->for($this->user)->count(2)->create(['status' => 'Pending']);
-        Task::factory()->for($this->user)->create(['title' => 'Ritas done task', 'status' => 'Completed']);
-        Task::factory()->for($this->admin)->create(['title' => 'Admins task']);
+        Task::factory()->for($this->user)->create(['status' => 'Completed']);
+        Task::factory()->for($this->admin)->create(['status' => 'Completed']);   // not counted: someone else's
 
         $page = $this->actingAs($this->user)->get(route('user.dashboard'))->assertOk();
 
+        // Each label followed by its count card value
         $page->assertSee('My Dashboard')
-            ->assertSee('data-count="total">3<', false)
-            ->assertSee('data-count="pending">2<', false)
-            ->assertSee('data-count="completed">1<', false)
-            ->assertDontSee('data-count="users"', false)
-            ->assertSee('id="addTaskForm"', false)
-            ->assertSee('Ritas done task')
-            ->assertDontSee('Admins task')
-            ->assertDontSee('id="addTaskUser"', false);   // no "Assign to" for regular users
+            ->assertSeeInOrder(['Total tasks', 'fw-semibold">3<', 'Pending', 'fw-semibold">2<', 'Completed', 'fw-semibold">1<'], false)
+            ->assertDontSee('small">Users<', false)
+            ->assertSee('href="'.route('tasks.index').'"', false)
+            ->assertDontSee('id="addTaskForm"', false);   // the task list and Add Task stay on the Tasks page
     }
 
-    public function test_admin_dashboard_shows_every_task_totals_and_add_task_with_assign_to(): void
+    public function test_admin_dashboard_shows_totals_and_task_and_user_management_links(): void
     {
-        Task::factory()->for($this->user)->create(['title' => 'Ritas task', 'status' => 'Pending']);
+        Task::factory()->for($this->user)->create(['status' => 'Pending']);
         Task::factory()->for($this->admin)->create(['status' => 'Completed']);
 
         $page = $this->actingAs($this->admin)->get(route('admin.dashboard'))->assertOk();
 
         $page->assertSee('Admin Dashboard')
-            ->assertSee('data-count="users">2<', false)
-            ->assertSee('data-count="total">2<', false)
-            ->assertSee('data-count="pending">1<', false)
-            ->assertSee('data-count="completed">1<', false)
-            ->assertSee('id="addTaskForm"', false)
-            ->assertSee('id="addTaskUser"', false)
-            ->assertSeeInOrder(['Ritas task', 'Rita Regular']);
+            ->assertSeeInOrder([
+                'small">Users<', 'fw-semibold">2<',
+                'Total tasks', 'fw-semibold">2<',
+                'Pending', 'fw-semibold">1<',
+                'Completed', 'fw-semibold">1<',
+            ], false)
+            ->assertSee('href="'.route('tasks.index').'"', false)
+            ->assertSee('href="'.route('admin.users.create').'"', false)
+            ->assertSee('href="'.route('admin.users.index').'"', false);
     }
 
     public function test_navbar_has_no_separate_dashboard_link_and_the_logo_goes_to_the_dashboard(): void
@@ -127,6 +126,6 @@ class DashboardTest extends TestCase
             ->get(route('tasks.index'))
             ->assertOk()
             ->assertSee('My Tasks')
-            ->assertDontSee('data-count="total">', false);   // the page's script mentions data-count, so match the card itself
+            ->assertDontSee('Total tasks');
     }
 }
