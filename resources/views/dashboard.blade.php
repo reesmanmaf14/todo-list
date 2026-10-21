@@ -1,4 +1,3 @@
-{{-- A regular user's dashboard (DashboardController): My Tasks, only their own tasks --}}
 @extends('layouts.app')
 
 @section('content')
