@@ -24,7 +24,7 @@ class TaskUiTest extends TestCase
     // The <tr> of one task, so assertions don't match other rows or the page's JavaScript
     private function rowHtml(Task $task): string
     {
-        $page = $this->get(route('tasks.index'))->assertOk()->getContent();
+        $page = $this->get(route('user.dashboard'))->assertOk()->getContent();
 
         preg_match('/<tr data-task-id="'.$task->id.'".*?<\/tr>/s', $page, $row);
 
@@ -84,7 +84,7 @@ class TaskUiTest extends TestCase
 
     public function test_page_has_filter_tabs_icons_and_an_empty_state_button(): void
     {
-        $this->get(route('tasks.index'))
+        $this->get(route('user.dashboard'))
             ->assertOk()
             ->assertSee('bootstrap-icons', false)
             ->assertSee('id="taskFilters"', false)
@@ -101,7 +101,7 @@ class TaskUiTest extends TestCase
     {
         $task = Task::factory()->for($this->user)->create();
 
-        $this->get(route('tasks.index'))
+        $this->get(route('user.dashboard'))
             ->assertOk()
             ->assertSee('id="deleteTaskModal"', false)
             ->assertSee('Delete this task?')
@@ -117,7 +117,7 @@ class TaskUiTest extends TestCase
     {
         $task = Task::factory()->for($this->user)->create();
 
-        $this->get(route('tasks.index'))
+        $this->get(route('user.dashboard'))
             ->assertOk()
             ->assertSee('for="addTaskTitle"', false)
             ->assertSee('id="addTaskTitle"', false)

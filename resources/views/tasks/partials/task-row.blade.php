@@ -1,5 +1,5 @@
-{{-- One task in the table. Used by tasks/index and by TaskController@store for tasks added without a page reload.
-     data-status / data-due-state: read by the filter tabs. task-completed: fades the row (see tasks/index) --}}
+{{-- One task in the table. Used by tasks/partials/task-list and by TaskController@store for tasks added without a page reload.
+     data-status / data-due-state: read by the filter tabs. task-completed: fades the row (see tasks/partials/task-list) --}}
 <tr data-task-id="{{ $task->id }}"
     data-status="{{ $task->status }}"
     data-due-state="{{ $task->due_state }}"

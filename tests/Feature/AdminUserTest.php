@@ -127,7 +127,7 @@ class AdminUserTest extends TestCase
     public function test_regular_user_does_not_see_the_navbar_link(): void
     {
         $this->actingAs($this->user)
-            ->get(route('tasks.index'))
+            ->get(route('user.dashboard'))
             ->assertOk()
             ->assertDontSee(route('admin.users.index'), false);
     }

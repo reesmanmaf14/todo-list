@@ -46,7 +46,7 @@ class TaskAccessTest extends TestCase
         Task::factory()->create(['title' => 'Unclaimed old task', 'user_id' => null]);
 
         $this->actingAs($user)
-            ->get(route('tasks.index'))
+            ->get(route('user.dashboard'))
             ->assertOk()
             ->assertSee('My own task')
             ->assertDontSee('Someone elses task')

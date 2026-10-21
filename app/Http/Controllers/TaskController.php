@@ -9,22 +9,7 @@ use Illuminate\Support\Facades\Gate;
 
 class TaskController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
-    {
-        // Admins ("view all tasks") see every task with its owner's name; everyone else only their own.
-        // assigner: the name shown as "Assigned by ..." on assigned tasks
-        $tasks = $request->user()->can('view all tasks')
-            ? Task::with('user:id,name', 'assigner:id,name')->latest()->get()
-            : $request->user()->tasks()->with('assigner:id,name')->latest()->get();
-
-        $users = $this->usersForAssigning($request->user());
-
-    return view('tasks.index', compact('tasks', 'users'));
-    }
-
+    // No index(): the task list is shown by the dashboards (DashboardController and Admin\DashboardController)
 
     public function store(Request $request)
 {

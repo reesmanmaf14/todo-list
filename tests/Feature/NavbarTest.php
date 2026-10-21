@@ -37,7 +37,7 @@ class NavbarTest extends TestCase
         $user = User::factory()->create(['name' => 'Rita Regular'])->assignRole('user');
 
         $this->actingAs($user);
-        $parts = $this->navbarParts(route('tasks.index'));
+        $parts = $this->navbarParts(route('user.dashboard'));
 
         $this->assertStringContainsString('Rita Regular', $parts['menu']);
         $this->assertStringContainsString($user->email, $parts['menu']);
@@ -58,10 +58,10 @@ class NavbarTest extends TestCase
         $user = User::factory()->create()->assignRole('user');
 
         $this->actingAs($user);
-        $this->assertStringNotContainsString(route('admin.users.index'), $this->navbarParts(route('tasks.index'))['bar']);
+        $this->assertStringNotContainsString(route('admin.users.index'), $this->navbarParts(route('user.dashboard'))['bar']);
 
         $this->actingAs($admin);
-        $this->assertStringContainsString('btn-outline-light" href="'.route('admin.users.index').'"', $this->compact($this->navbarParts(route('tasks.index'))['bar']));
+        $this->assertStringContainsString('btn-outline-light" href="'.route('admin.users.index').'"', $this->compact($this->navbarParts(route('admin.dashboard'))['bar']));
 
         // Solid on every Manage Users page: the list, Add User and Edit User
         foreach ([route('admin.users.index'), route('admin.users.create'), route('admin.users.edit', $user)] as $page) {
@@ -73,8 +73,8 @@ class NavbarTest extends TestCase
     {
         $this->actingAs(User::factory()->create()->assignRole('user'));
 
-        $page = $this->get(route('tasks.index'))->assertOk();
-        $bar = $this->navbarParts(route('tasks.index'))['bar'];
+        $page = $this->get(route('user.dashboard'))->assertOk();
+        $bar = $this->navbarParts(route('user.dashboard'))['bar'];
 
         $this->assertStringContainsString('class="brand-logo"', $bar);
         $this->assertStringContainsString('Crema', $bar);

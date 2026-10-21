@@ -1,4 +1,4 @@
-{{-- A task's Edit popup. Used by tasks/index and by TaskController@store for tasks added without a page reload.
+{{-- A task's Edit popup. Used by tasks/partials/task-list and by TaskController@store for tasks added without a page reload.
      $editFailed: true when this task's Edit form was submitted without JavaScript and failed validation --}}
 <div class="modal fade"
      id="editTaskModal-{{ $task->id }}"

@@ -34,7 +34,7 @@ class AdminTaskTest extends TestCase
         Task::factory()->create(['title' => 'Unclaimed old task', 'user_id' => null]);
 
         $this->actingAs($this->admin)
-            ->get(route('tasks.index'))
+            ->get(route('admin.dashboard'))
             ->assertOk()
             ->assertSee('All Tasks')
             ->assertSee('Assigned to')
@@ -50,7 +50,7 @@ class AdminTaskTest extends TestCase
         Task::factory()->for($this->admin)->create(['title' => 'Admins task']);
 
         $this->actingAs($this->user)
-            ->get(route('tasks.index'))
+            ->get(route('user.dashboard'))
             ->assertOk()
             ->assertSee('My Tasks')
             ->assertSee('Ritas task')
@@ -207,7 +207,7 @@ class AdminTaskTest extends TestCase
         $task = $this->assignTaskToUser();
 
         $page = $this->actingAs($this->user)
-            ->get(route('tasks.index'))
+            ->get(route('user.dashboard'))
             ->assertOk()
             ->assertDontSee('Assigned by Ada Admin')
             ->assertDontSee('id="editTaskModal-'.$task->id.'"', false)
@@ -227,7 +227,7 @@ class AdminTaskTest extends TestCase
 
         $this->actingAs($this->user);
 
-        $this->get(route('tasks.index'))->assertSee('editTaskModal-'.$task->id, false);
+        $this->get(route('user.dashboard'))->assertSee('editTaskModal-'.$task->id, false);
         $this->putJson(route('tasks.update', $task), ['title' => 'Renamed', 'status' => 'Pending'])->assertOk();
         $this->deleteJson(route('tasks.destroy', $task))->assertOk();
     }

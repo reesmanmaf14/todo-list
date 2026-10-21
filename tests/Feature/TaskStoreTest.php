@@ -80,13 +80,13 @@ class TaskStoreTest extends TestCase
 
     public function test_index_page_renders_with_and_without_tasks(): void
     {
-        $this->get(route('tasks.index'))
+        $this->get(route('user.dashboard'))
             ->assertOk()
             ->assertSee('No tasks yet. Add your first task!');
 
         $this->post(route('tasks.store'), ['title' => 'Existing task']);
 
-        $this->get(route('tasks.index'))
+        $this->get(route('user.dashboard'))
             ->assertOk()
             ->assertSee('Existing task');
     }

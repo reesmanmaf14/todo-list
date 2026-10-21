@@ -7,28 +7,40 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
+#Home = your dashboard (guests are sent on to the login page by /dashboard)
 Route::get('/', function () {
-    return redirect()->route('tasks.index');
+    return redirect()->route('dashboard');
 });
 
-#Breeze still sends people here (register, email verification, password confirm) - pass each role on to its own dashboard
+#Breeze still sends people here (register, email verification, password confirm) - pass each role on to its own dashboard.
+#reflash: keeps a "Task created successfully!" message alive through this extra redirect
 Route::get('/dashboard', function () {
+    session()->reflash();
+
     return auth()->user()->hasRole('admin')
         ? redirect()->route('admin.dashboard')
         : redirect()->route('user.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+#My Tasks: a regular user's own tasks
 Route::get('/user/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('user.dashboard');
 
-#role:admin checks the role itself, so a regular user gets a 403 even if they type the URL
+#All Tasks: every user's tasks. role:admin checks the role itself, so a regular user gets a 403 even if they type the URL
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
     ->middleware(['auth', 'role:admin'])->name('admin.dashboard');
 
 #auth: guests are redirected to the login page (AJAX requests get a 401 instead)
 Route::middleware('auth')->group(function () {
+    #No separate task page any more: /tasks (where task forms redirect after saving) goes to your dashboard
+    Route::get('/tasks', function () {
+        session()->reflash();
+
+        return redirect()->route('dashboard');
+    })->name('tasks.index');
+
     Route::resource('tasks', TaskController::class)
-        ->except(['show', 'create', 'edit']); #add/edit forms are popups on the index page
+        ->except(['index', 'show', 'create', 'edit']); #add/edit forms are popups on the dashboard
 
     #Complete / Mark Pending button: changes only the status (allowed on tasks an admin assigned to you)
     Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.status');

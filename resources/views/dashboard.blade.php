@@ -1,17 +1,19 @@
-{{-- A regular user's dashboard: their counts + a link to their task list (on the Tasks page) --}}
+{{-- A regular user's dashboard (DashboardController): My Tasks, only their own tasks --}}
 @extends('layouts.app')
 
 @section('content')
 
-<h2 class="mb-4">My Dashboard</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Tasks</h2>
 
-@include('tasks.partials.task-counts')
-
-<div class="card shadow-sm">
-    <div class="card-header"><i class="bi bi-list-check" aria-hidden="true"></i> My Tasks</div>
-    <div class="card-body">
-        <a href="{{ route('tasks.index') }}" class="btn btn-primary">View My Tasks</a>
-    </div>
+    <button type="button"
+            class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#addTaskModal">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Add Task
+    </button>
 </div>
+
+@include('tasks.partials.task-list')
 
 @endsection

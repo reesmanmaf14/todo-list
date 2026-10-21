@@ -1,17 +1,6 @@
-@extends('layouts.app')
-
-@section('content')
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>@can('view all tasks') All Tasks @else My Tasks @endcan</h2>
-
-    <button type="button"
-            class="btn btn-primary"
-            data-bs-toggle="modal"
-            data-bs-target="#addTaskModal">
-        <i class="bi bi-plus-lg" aria-hidden="true"></i> Add Task
-    </button>
-</div>
+{{-- The task list shared by both dashboards (dashboard.blade.php and admin/dashboard.blade.php):
+     alerts, filter tabs, table, Add/Edit/Delete popups and their JavaScript. Admins ("view all tasks") also see each
+     task's owner and get "Assign to". Each dashboard adds its own heading and Add Task button above this --}}
 
 @if(session('success'))
     <div class="alert alert-success" id="flashAlert">
@@ -230,7 +219,6 @@
     This task will be deleted permanently. This cannot be undone.
 </x-confirm-modal>
 
-@endsection
 
 @push('styles')
     <style>

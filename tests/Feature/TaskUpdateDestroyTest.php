@@ -175,7 +175,7 @@ class TaskUpdateDestroyTest extends TestCase
     {
         $task = $this->makeTask();
 
-        $this->get(route('tasks.index'))
+        $this->get(route('user.dashboard'))
             ->assertOk()
             ->assertSee('data-task-id="'.$task->id.'"', false)
             ->assertSee('data-role="edit-form"', false)

@@ -28,12 +28,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Credentials were correct: now send them to their dashboard by role
+        // Credentials were correct: now send them to their dashboard by role.
+        // Always the dashboard, not intended(): that would send them back to the page that bounced them to login (e.g. /tasks)
+        $request->session()->forget('url.intended');
+
         if ($request->user()->hasRole('admin')) {
-            return redirect()->intended(route('admin.dashboard', absolute: false));
+            return redirect()->route('admin.dashboard');
         }
 
-        return redirect()->intended(route('user.dashboard', absolute: false));
+        return redirect()->route('user.dashboard');
     }
 
     /**

@@ -44,6 +44,27 @@ class DashboardTest extends TestCase
         $this->assertAuthenticatedAs($this->user);
     }
 
+    public function test_login_goes_to_the_dashboard_even_after_being_bounced_from_the_task_page(): void
+    {
+        // Logged out, opening /tasks sends you to login (Laravel remembers /tasks as the "intended" page)
+        $this->get(route('tasks.index'))->assertRedirect(route('login'));
+
+        $this->post('/login', ['email' => $this->user->email, 'password' => 'password'])
+            ->assertRedirect(route('user.dashboard'));
+    }
+
+    public function test_logging_out_and_back_in_goes_to_the_dashboard(): void
+    {
+        $this->actingAs($this->admin)->post('/logout')->assertRedirect('/');
+
+        // Logout lands on "/", which (as a guest) ends at the login page
+        $this->get('/')->assertRedirect(route('dashboard'));
+        $this->get(route('dashboard'))->assertRedirect(route('login'));
+
+        $this->post('/login', ['email' => $this->admin->email, 'password' => 'password'])
+            ->assertRedirect(route('admin.dashboard'));
+    }
+
     // --- /dashboard (still used by the other Breeze controllers) ---
 
     public function test_dashboard_sends_admins_to_the_admin_dashboard(): void
@@ -75,57 +96,59 @@ class DashboardTest extends TestCase
         $this->get(route('admin.dashboard'))->assertRedirect(route('login'));
     }
 
-    // --- What each dashboard shows ---
+    // --- Each dashboard is the task page for that role ---
 
-    public function test_user_dashboard_shows_only_their_own_counts_and_a_link_to_their_tasks(): void
+    public function test_user_dashboard_is_the_my_tasks_page(): void
     {
-        Task::factory()->for($this->user)->count(2)->create(['status' => 'Pending']);
-        Task::factory()->for($this->user)->create(['status' => 'Completed']);
-        Task::factory()->for($this->admin)->create(['status' => 'Completed']);   // not counted: someone else's
+        Task::factory()->for($this->user)->create(['title' => 'Ritas task']);
+        Task::factory()->for($this->admin)->create(['title' => 'Admins task']);
 
-        $page = $this->actingAs($this->user)->get(route('user.dashboard'))->assertOk();
-
-        // Each label followed by its count card value
-        $page->assertSee('My Dashboard')
-            ->assertSeeInOrder(['Total tasks', 'fw-semibold">3<', 'Pending', 'fw-semibold">2<', 'Completed', 'fw-semibold">1<'], false)
-            ->assertDontSee('small">Users<', false)
-            ->assertSee('href="'.route('tasks.index').'"', false)
-            ->assertDontSee('id="addTaskForm"', false);   // the task list and Add Task stay on the Tasks page
+        $this->actingAs($this->user)
+            ->get(route('user.dashboard'))
+            ->assertOk()
+            ->assertSee('My Tasks')
+            ->assertSee('id="addTaskForm"', false)
+            ->assertSee('Ritas task')
+            ->assertDontSee('Admins task')
+            ->assertDontSee('id="addTaskUser"', false);   // no "Assign to" for regular users
     }
 
-    public function test_admin_dashboard_shows_totals_and_task_and_user_management_links(): void
+    public function test_admin_dashboard_is_the_all_tasks_page(): void
     {
-        Task::factory()->for($this->user)->create(['status' => 'Pending']);
-        Task::factory()->for($this->admin)->create(['status' => 'Completed']);
+        Task::factory()->for($this->user)->create(['title' => 'Ritas task']);
 
-        $page = $this->actingAs($this->admin)->get(route('admin.dashboard'))->assertOk();
-
-        $page->assertSee('Admin Dashboard')
-            ->assertSeeInOrder([
-                'small">Users<', 'fw-semibold">2<',
-                'Total tasks', 'fw-semibold">2<',
-                'Pending', 'fw-semibold">1<',
-                'Completed', 'fw-semibold">1<',
-            ], false)
-            ->assertSee('href="'.route('tasks.index').'"', false)
-            ->assertSee('href="'.route('admin.users.create').'"', false)
-            ->assertSee('href="'.route('admin.users.index').'"', false);
+        $this->actingAs($this->admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('All Tasks')
+            ->assertSee('id="addTaskForm"', false)
+            ->assertSee('id="addTaskUser"', false)
+            ->assertSeeInOrder(['Ritas task', 'Rita Regular']);
     }
 
-    public function test_navbar_has_no_separate_dashboard_link_and_the_logo_goes_to_the_dashboard(): void
-    {
-        $page = $this->actingAs($this->user)->get(route('user.dashboard'))->assertOk();
-
-        $page->assertDontSee('bi-speedometer2', false)
-            ->assertSee('class="navbar-brand" href="'.route('dashboard').'"', false);
-    }
-
-    public function test_task_page_has_no_count_cards(): void
+    public function test_tasks_page_redirects_to_the_dashboard(): void
     {
         $this->actingAs($this->user)
             ->get(route('tasks.index'))
+            ->assertRedirect(route('dashboard'));
+    }
+
+    public function test_saving_a_task_without_javascript_shows_its_message_on_the_dashboard(): void
+    {
+        // tasks.store redirects to /tasks -> /dashboard -> /user/dashboard: the flash message must survive all three
+        $this->actingAs($this->user)
+            ->followingRedirects()
+            ->post(route('tasks.store'), ['title' => 'Plain form task'])
             ->assertOk()
             ->assertSee('My Tasks')
-            ->assertDontSee('Total tasks');
+            ->assertSee('Task created successfully!')
+            ->assertSee('Plain form task');
+    }
+
+    public function test_the_logo_goes_to_the_dashboard(): void
+    {
+        $this->actingAs($this->user)
+            ->get(route('user.dashboard'))
+            ->assertSee('class="navbar-brand" href="'.route('dashboard').'"', false);
     }
 }
