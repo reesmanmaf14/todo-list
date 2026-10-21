@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Task;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -10,9 +11,21 @@ class TaskUpdateDestroyTest extends TestCase
 {
     use RefreshDatabase;
 
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Task routes require login
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+    }
+
+    // A task owned by the logged-in user
     private function makeTask(array $attributes = []): Task
     {
-        return Task::create(array_merge([
+        return Task::factory()->for($this->user)->create(array_merge([
             'title' => 'Buy milk',
             'description' => 'Two litres',
             'status' => 'Pending',

@@ -1,0 +1,577 @@
+/*
+ * "Warm Ivory & Espresso" theme for layouts/app.blade.php (loaded after Bootstrap 5.3).
+ * Only colors, borders, radii, shadows and spacing change. Bootstrap class names stay as they are,
+ * because the task page JavaScript and the tests rely on them.
+ */
+
+/* ---------- Palette ---------- */
+:root {
+    --theme-ivory: #F5F0E8;       /* page AND navbar background */
+    --theme-white: #FFFFFF;       /* tables, cards, forms, dropdowns, modals */
+    --theme-espresso: #725746;    /* primary buttons and accents */
+    --theme-espresso-hover: #5E4739;
+    --theme-roast: #302720;       /* headings and text */
+    --theme-latte: #D9CFC2;       /* borders and dividers */
+
+    --theme-latte-tint: #F0E9DF;  /* soft fills: hover, Completed, Admin badge */
+    --theme-muted: #6B6058;       /* secondary text */
+
+    /* Warning tones, used only for Due today, Overdue and Delete */
+    --theme-amber-bg: #F6EBD3;
+    --theme-amber-text: #7A5A1E;
+    --theme-rust-bg: #F7E6E1;
+    --theme-rust: #9A3B2E;
+    --theme-rust-hover: #82301F;
+
+    --theme-radius: 12px;
+    --theme-radius-sm: 8px;
+    --theme-shadow: 0 1px 2px rgba(48, 39, 32, 0.04), 0 6px 20px rgba(48, 39, 32, 0.06);
+    --theme-focus: 0 0 0 0.25rem rgba(114, 87, 70, 0.22);
+    --theme-transition: 0.15s ease;
+
+    /* Bootstrap variables, so built-in components pick up the palette */
+    --bs-body-color: var(--theme-roast);
+    --bs-body-bg: var(--theme-white);
+    --bs-emphasis-color: var(--theme-roast);
+    --bs-secondary-color: var(--theme-muted);
+    --bs-border-color: var(--theme-latte);
+    --bs-link-color: var(--theme-espresso);
+    --bs-link-color-rgb: 114, 87, 70;
+    --bs-link-hover-color: var(--theme-espresso-hover);
+    --bs-link-hover-color-rgb: 94, 71, 57;
+}
+
+/* ---------- Page ---------- */
+body.app-theme {
+    min-height: 100vh;
+    color: var(--theme-roast);
+    background-color: var(--theme-ivory);
+}
+
+.app-theme h1,
+.app-theme h2,
+.app-theme h3 {
+    color: var(--theme-roast);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+}
+
+.app-theme .container.py-4 {
+    padding-top: 2rem !important;
+    padding-bottom: 3rem !important;
+}
+
+/* ---------- Navbar: same ivory as the page, separated by a hairline ---------- */
+.navbar-theme {
+    background-color: var(--theme-ivory);
+    border-bottom: 1px solid var(--theme-latte);
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+}
+
+.navbar-theme .navbar-brand {
+    color: var(--theme-roast);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    transition: color var(--theme-transition);
+}
+
+.navbar-theme .navbar-brand:hover,
+.navbar-theme .navbar-brand:focus {
+    color: var(--theme-espresso);
+}
+
+/* Crema logo + name */
+.navbar-theme .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.navbar-theme .brand-logo {
+    width: 30px;
+    height: 30px;
+    color: var(--theme-espresso);
+    flex: none;
+}
+
+.navbar-theme .brand-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.navbar-theme .btn {
+    transition: background-color var(--theme-transition), border-color var(--theme-transition), color var(--theme-transition);
+}
+
+/* The Manage Users / Log in buttons keep btn-outline-light / btn-light (NavbarTest checks them) */
+.navbar-theme .btn-outline-light {
+    --bs-btn-color: var(--theme-roast);
+    --bs-btn-border-color: var(--theme-latte);
+    --bs-btn-hover-color: var(--theme-roast);
+    --bs-btn-hover-bg: var(--theme-white);
+    --bs-btn-hover-border-color: var(--theme-latte);
+    --bs-btn-active-color: var(--theme-roast);
+    --bs-btn-active-bg: var(--theme-white);
+    --bs-btn-active-border-color: var(--theme-latte);
+    --bs-btn-focus-shadow-rgb: 114, 87, 70;
+}
+
+/* Solid button = you are on that page (Manage Users) / Register */
+.navbar-theme .btn-light {
+    --bs-btn-color: var(--theme-roast);
+    --bs-btn-bg: var(--theme-white);
+    --bs-btn-border-color: var(--theme-latte);
+    --bs-btn-hover-color: var(--theme-roast);
+    --bs-btn-hover-bg: var(--theme-white);
+    --bs-btn-hover-border-color: var(--theme-espresso);
+    --bs-btn-active-color: var(--theme-roast);
+    --bs-btn-active-bg: var(--theme-white);
+    --bs-btn-active-border-color: var(--theme-espresso);
+    --bs-btn-focus-shadow-rgb: 114, 87, 70;
+}
+
+/* Account menu button: small espresso circle */
+.navbar-theme .rounded-circle.btn-outline-light {
+    --bs-btn-color: var(--theme-white);
+    --bs-btn-bg: var(--theme-espresso);
+    --bs-btn-border-color: var(--theme-espresso);
+    --bs-btn-hover-color: var(--theme-white);
+    --bs-btn-hover-bg: var(--theme-espresso-hover);
+    --bs-btn-hover-border-color: var(--theme-espresso-hover);
+    --bs-btn-active-color: var(--theme-white);
+    --bs-btn-active-bg: var(--theme-espresso-hover);
+    --bs-btn-active-border-color: var(--theme-espresso-hover);
+
+    /* Equal width and height so it is a true circle (btn-sm padding is wider than tall) */
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.app-theme .dropdown-menu {
+    --bs-dropdown-bg: var(--theme-white);
+    --bs-dropdown-border-color: var(--theme-latte);
+    --bs-dropdown-link-color: var(--theme-roast);
+    --bs-dropdown-link-hover-color: var(--theme-roast);
+    --bs-dropdown-link-hover-bg: var(--theme-latte-tint);
+    --bs-dropdown-link-active-color: var(--theme-white);
+    --bs-dropdown-link-active-bg: var(--theme-espresso);
+    --bs-dropdown-header-color: var(--theme-muted);
+    --bs-dropdown-divider-bg: var(--theme-latte);
+    border-radius: var(--theme-radius);
+    box-shadow: var(--theme-shadow) !important;
+    padding: 0.4rem;
+}
+
+.app-theme .dropdown-item {
+    border-radius: 6px;
+    transition: background-color var(--theme-transition);
+}
+
+/* Log out keeps its warning color */
+.app-theme .dropdown-item.text-danger:hover,
+.app-theme .dropdown-item.text-danger:focus {
+    background-color: var(--theme-rust-bg);
+}
+
+/* ---------- Surfaces ---------- */
+.app-theme .card {
+    --bs-card-bg: var(--theme-white);
+    --bs-card-border-color: var(--theme-latte);
+    --bs-card-border-radius: var(--theme-radius);
+    --bs-card-inner-border-radius: calc(var(--theme-radius) - 1px);
+    --bs-card-spacer-x: 1.5rem;
+    --bs-card-spacer-y: 1.5rem;
+}
+
+.app-theme .card.shadow-sm {
+    box-shadow: var(--theme-shadow) !important;
+}
+
+@media (max-width: 575.98px) {
+    .app-theme .card {
+        --bs-card-spacer-x: 1rem;
+        --bs-card-spacer-y: 1rem;
+    }
+}
+
+.app-theme .modal-content {
+    --bs-modal-bg: var(--theme-white);
+    --bs-modal-border-color: var(--theme-latte);
+    --bs-modal-border-radius: var(--theme-radius);
+    --bs-modal-inner-border-radius: calc(var(--theme-radius) - 1px);
+    --bs-modal-header-border-color: var(--theme-latte);
+    --bs-modal-footer-border-color: var(--theme-latte);
+    box-shadow: 0 20px 48px rgba(48, 39, 32, 0.16);
+}
+
+/* Every popup: roomy header and footer, Cancel then the main action on the right */
+.app-theme .modal {
+    --bs-modal-padding: 1.5rem;
+    --bs-modal-header-padding: 1.15rem 1.5rem;
+    --bs-modal-footer-gap: 0.5rem;
+}
+
+.app-theme .modal-backdrop {
+    --bs-backdrop-bg: var(--theme-roast);
+    --bs-backdrop-opacity: 0.35;
+}
+
+.app-theme .modal-title {
+    color: var(--theme-roast);
+    font-weight: 600;
+}
+
+.app-theme .modal-footer {
+    padding: 0.9rem 1.5rem;
+    background-color: #FCFAF7;
+    border-bottom-left-radius: calc(var(--theme-radius) - 1px);
+    border-bottom-right-radius: calc(var(--theme-radius) - 1px);
+}
+
+/* "Are you sure?" popups are small */
+.app-theme .modal-confirm {
+    --bs-modal-width: 420px;
+}
+
+@media (max-width: 575.98px) {
+    .app-theme .modal {
+        --bs-modal-padding: 1rem;
+        --bs-modal-header-padding: 1rem;
+    }
+
+    .app-theme .modal-footer {
+        padding: 0.75rem 1rem;
+        border-radius: 0;
+    }
+
+    /* Full-screen popups on phones: the action buttons share the width */
+    .app-theme .modal-fullscreen-sm-down .modal-footer > .btn {
+        flex: 1 1 0;
+    }
+
+    /* The small confirm popup keeps a margin instead of going full-screen */
+    .app-theme .modal-confirm {
+        margin: 1rem;
+    }
+}
+
+/* Invalid fields get a rust border (set after a failed save) */
+.app-theme .form-control.is-invalid,
+.app-theme .form-select.is-invalid {
+    border-color: var(--theme-rust);
+}
+
+/* No red warning icon inside text fields: the message under the field says what is wrong */
+.app-theme .form-control.is-invalid {
+    background-image: none;
+    padding-right: 0.75rem;
+}
+
+.app-theme .form-select.is-invalid {
+    --bs-form-select-bg-icon: none;
+}
+
+.app-theme .form-control.is-invalid:focus,
+.app-theme .form-select.is-invalid:focus {
+    box-shadow: 0 0 0 0.25rem rgba(154, 59, 46, 0.18);
+}
+
+/* Delete section on the Edit User page */
+.app-theme .danger-zone {
+    --bs-card-border-color: #EBCFC7;
+}
+
+/* ---------- Tables ---------- */
+.app-theme .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--theme-roast);
+    --bs-table-border-color: var(--theme-latte-tint);
+    --bs-table-hover-bg: rgba(217, 207, 194, 0.22);
+    --bs-table-hover-color: var(--theme-roast);
+}
+
+.app-theme .table > :not(caption) > * > * {
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+}
+
+.app-theme .table > thead th {
+    color: var(--theme-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--theme-latte);
+    white-space: nowrap;
+}
+
+.app-theme .table-hover > tbody > tr > * {
+    transition: background-color var(--theme-transition);
+}
+
+/* ---------- Filter pills ---------- */
+.app-theme .nav-pills {
+    --bs-nav-link-color: var(--theme-muted);
+    --bs-nav-link-hover-color: var(--theme-roast);
+    --bs-nav-pills-border-radius: 999px;
+    --bs-nav-pills-link-active-color: var(--theme-white);
+    --bs-nav-pills-link-active-bg: var(--theme-espresso);
+    gap: 0.25rem;
+}
+
+.app-theme .nav-pills .nav-link {
+    padding: 0.35rem 0.95rem;
+    font-weight: 500;
+    transition: background-color var(--theme-transition), color var(--theme-transition);
+}
+
+.app-theme .nav-pills .nav-link:not(.active):hover {
+    background-color: var(--theme-latte-tint);
+}
+
+/* ---------- Badges ----------
+ * The JavaScript sets these Bootstrap classes, so they are restyled here
+ * (Bootstrap's bg-* and text-dark use !important). bg-warning is used twice:
+ * for the Pending status and for the "Due today" due-date badge. */
+.app-theme .badge {
+    padding: 0.4em 0.75em;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* Due today */
+.app-theme .badge.bg-warning {
+    background-color: var(--theme-amber-bg) !important;
+    color: var(--theme-amber-text) !important;
+}
+
+/* Overdue */
+.app-theme .badge.bg-danger {
+    background-color: var(--theme-rust-bg) !important;
+    color: var(--theme-rust) !important;
+}
+
+/* Status column: Pending is neutral, Completed a soft latte fill */
+.app-theme [data-field="status"] .badge.bg-warning {
+    background-color: var(--theme-white) !important;
+    border-color: var(--theme-latte);
+    color: var(--theme-roast) !important;
+}
+
+.app-theme [data-field="status"] .badge.bg-success,
+.app-theme .badge.bg-success {
+    background-color: var(--theme-latte-tint) !important;
+    color: var(--theme-espresso) !important;
+}
+
+/* Role badges on the Manage Users page */
+.app-theme .badge.role-admin {
+    background-color: var(--theme-latte-tint);
+    color: var(--theme-espresso);
+}
+
+.app-theme .badge.role-user {
+    background-color: var(--theme-white);
+    border-color: var(--theme-latte);
+    color: var(--theme-roast);
+}
+
+.app-theme .badge.role-you {
+    background-color: var(--theme-white);
+    border-color: var(--theme-espresso);
+    color: var(--theme-espresso);
+}
+
+/* ---------- Buttons ---------- */
+.app-theme .btn {
+    --bs-btn-border-radius: var(--theme-radius-sm);
+    --bs-btn-font-weight: 500;
+    --bs-btn-padding-x: 1rem;
+    transition: background-color var(--theme-transition), border-color var(--theme-transition), color var(--theme-transition), box-shadow var(--theme-transition);
+}
+
+.app-theme .btn-sm {
+    --bs-btn-border-radius: 7px;
+    --bs-btn-padding-x: 0.65rem;
+}
+
+.app-theme .btn-primary {
+    --bs-btn-color: var(--theme-white);
+    --bs-btn-bg: var(--theme-espresso);
+    --bs-btn-border-color: var(--theme-espresso);
+    --bs-btn-hover-color: var(--theme-white);
+    --bs-btn-hover-bg: var(--theme-espresso-hover);
+    --bs-btn-hover-border-color: var(--theme-espresso-hover);
+    --bs-btn-active-color: var(--theme-white);
+    --bs-btn-active-bg: var(--theme-espresso-hover);
+    --bs-btn-active-border-color: var(--theme-espresso-hover);
+    --bs-btn-disabled-color: var(--theme-white);
+    --bs-btn-disabled-bg: var(--theme-espresso);
+    --bs-btn-disabled-border-color: var(--theme-espresso);
+    --bs-btn-focus-shadow-rgb: 114, 87, 70;
+}
+
+/* Complete / Mark Pending: espresso outline */
+.app-theme .btn-success {
+    --bs-btn-color: var(--theme-espresso);
+    --bs-btn-bg: var(--theme-white);
+    --bs-btn-border-color: var(--theme-espresso);
+    --bs-btn-hover-color: var(--theme-espresso-hover);
+    --bs-btn-hover-bg: var(--theme-latte-tint);
+    --bs-btn-hover-border-color: var(--theme-espresso-hover);
+    --bs-btn-active-color: var(--theme-espresso-hover);
+    --bs-btn-active-bg: var(--theme-latte-tint);
+    --bs-btn-active-border-color: var(--theme-espresso-hover);
+    --bs-btn-disabled-color: var(--theme-espresso);
+    --bs-btn-disabled-bg: var(--theme-white);
+    --bs-btn-disabled-border-color: var(--theme-espresso);
+    --bs-btn-focus-shadow-rgb: 114, 87, 70;
+}
+
+/* Solid rust: confirm-delete buttons (Delete User and its popup) */
+.app-theme .btn-danger {
+    --bs-btn-color: var(--theme-white);
+    --bs-btn-bg: var(--theme-rust);
+    --bs-btn-border-color: var(--theme-rust);
+    --bs-btn-hover-color: var(--theme-white);
+    --bs-btn-hover-bg: var(--theme-rust-hover);
+    --bs-btn-hover-border-color: var(--theme-rust-hover);
+    --bs-btn-active-color: var(--theme-white);
+    --bs-btn-active-bg: var(--theme-rust-hover);
+    --bs-btn-active-border-color: var(--theme-rust-hover);
+    --bs-btn-disabled-color: var(--theme-white);
+    --bs-btn-disabled-bg: var(--theme-rust);
+    --bs-btn-disabled-border-color: var(--theme-rust);
+    --bs-btn-focus-shadow-rgb: 154, 59, 46;
+}
+
+/* Delete in a task row: rust outline that fills on hover, so the table stays calm */
+.app-theme #tasksTableBody .btn-danger,
+.app-theme .btn-outline-danger {
+    --bs-btn-color: var(--theme-rust);
+    --bs-btn-bg: var(--theme-white);
+    --bs-btn-border-color: var(--theme-rust);
+    --bs-btn-hover-color: var(--theme-white);
+    --bs-btn-hover-bg: var(--theme-rust);
+    --bs-btn-hover-border-color: var(--theme-rust);
+    --bs-btn-active-color: var(--theme-white);
+    --bs-btn-active-bg: var(--theme-rust-hover);
+    --bs-btn-active-border-color: var(--theme-rust-hover);
+    --bs-btn-disabled-color: var(--theme-rust);
+    --bs-btn-disabled-bg: var(--theme-white);
+    --bs-btn-disabled-border-color: var(--theme-rust);
+    --bs-btn-focus-shadow-rgb: 154, 59, 46;
+}
+
+/* Cancel / Back buttons: quiet white with a latte border */
+.app-theme .btn-secondary {
+    --bs-btn-color: var(--theme-roast);
+    --bs-btn-bg: var(--theme-white);
+    --bs-btn-border-color: var(--theme-latte);
+    --bs-btn-hover-color: var(--theme-roast);
+    --bs-btn-hover-bg: var(--theme-latte-tint);
+    --bs-btn-hover-border-color: var(--theme-latte);
+    --bs-btn-active-color: var(--theme-roast);
+    --bs-btn-active-bg: var(--theme-latte-tint);
+    --bs-btn-active-border-color: var(--theme-latte);
+    --bs-btn-focus-shadow-rgb: 114, 87, 70;
+}
+
+/* ---------- Alerts ---------- */
+.app-theme .alert {
+    --bs-alert-border-radius: var(--theme-radius);
+}
+
+.app-theme .alert-success {
+    --bs-alert-color: var(--theme-roast);
+    --bs-alert-bg: var(--theme-white);
+    --bs-alert-border-color: var(--theme-latte);
+    border-left: 3px solid var(--theme-espresso);
+}
+
+.app-theme .alert-danger {
+    --bs-alert-color: var(--theme-rust);
+    --bs-alert-bg: var(--theme-rust-bg);
+    --bs-alert-border-color: #EBCFC7;
+}
+
+.app-theme .text-danger {
+    color: var(--theme-rust) !important;
+}
+
+/* ---------- Forms ---------- */
+.app-theme .form-label,
+.app-theme legend {
+    color: var(--theme-roast);
+    font-weight: 500;
+}
+
+.app-theme .form-text {
+    color: var(--theme-muted);
+}
+
+.app-theme .form-control,
+.app-theme .form-select {
+    background-color: var(--theme-white);
+    border-color: var(--theme-latte);
+    border-radius: var(--theme-radius-sm);
+    color: var(--theme-roast);
+    transition: border-color var(--theme-transition), box-shadow var(--theme-transition);
+}
+
+.app-theme .form-control::placeholder {
+    color: var(--theme-muted);
+    opacity: 0.8;
+}
+
+.app-theme .form-control:focus,
+.app-theme .form-select:focus {
+    border-color: var(--theme-espresso);
+    box-shadow: var(--theme-focus);
+}
+
+.app-theme .form-check-input:checked {
+    background-color: var(--theme-espresso);
+    border-color: var(--theme-espresso);
+}
+
+.app-theme .form-check-input:focus,
+.app-theme .btn-close:focus {
+    box-shadow: var(--theme-focus);
+}
+
+/* ---------- Pagination ---------- */
+.app-theme .pagination {
+    --bs-pagination-color: var(--theme-espresso);
+    --bs-pagination-bg: var(--theme-white);
+    --bs-pagination-border-color: var(--theme-latte);
+    --bs-pagination-hover-color: var(--theme-espresso-hover);
+    --bs-pagination-hover-bg: var(--theme-latte-tint);
+    --bs-pagination-hover-border-color: var(--theme-latte);
+    --bs-pagination-focus-color: var(--theme-espresso-hover);
+    --bs-pagination-focus-bg: var(--theme-latte-tint);
+    --bs-pagination-focus-box-shadow: var(--theme-focus);
+    --bs-pagination-active-bg: var(--theme-espresso);
+    --bs-pagination-active-border-color: var(--theme-espresso);
+    --bs-pagination-disabled-color: var(--theme-muted);
+    --bs-pagination-disabled-bg: var(--theme-white);
+    --bs-pagination-disabled-border-color: var(--theme-latte);
+    margin-bottom: 0;
+}
+
+/* ---------- Respect reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .app-theme *,
+    .navbar-theme * {
+        transition: none !important;
+    }
+}

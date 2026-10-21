@@ -2,12 +2,24 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class TaskStoreTest extends TestCase
 {
     use RefreshDatabase;
+
+    private User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Task routes require login
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+    }
 
     public function test_ajax_request_creates_task_and_returns_json(): void
     {
@@ -24,9 +36,9 @@ class TaskStoreTest extends TestCase
             ->assertJsonPath('task.title', 'Buy milk')
             ->assertJsonPath('task.status', 'Pending')
             ->assertJsonPath('task.due_date', $dueDate)
-            ->assertJsonStructure(['created_date', 'urls' => ['update', 'destroy']]);
+            ->assertJsonStructure(['row', 'modal']);
 
-        $this->assertDatabaseHas('tasks', ['title' => 'Buy milk', 'status' => 'Pending']);
+        $this->assertDatabaseHas('tasks', ['title' => 'Buy milk', 'status' => 'Pending', 'user_id' => $this->user->id]);
     }
 
     public function test_ajax_request_with_invalid_data_returns_422_with_errors(): void

@@ -21,5 +21,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Runs after the users are created, so they get the "user" role
+        $this->call(RolesAndPermissionsSeeder::class);
     }
 }
